@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1117">
+<title>LinuxSim</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#c9d1d9;--blue:#58a6ff;--green:#3fb950;--red:#ff7b72;--yellow:#f0c040;--purple:#bc8cff;--orange:#f0883e;--muted:#8b949e;--easy:#3fb950;--medium:#f0c040;--hard:#f0883e;--expert:#ff7b72}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;height:100dvh;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Courier New',monospace;touch-action:manipulation}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh;max-width:700px;margin:0 auto}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0}
+#login-screen.hidden{display:none}
+.ls-logo{font-size:42px;margin-bottom:8px}
+.ls-title{color:var(--blue);font-size:20px;font-weight:bold;margin-bottom:4px}
+.ls-sub{color:var(--muted);font-size:12px;margin-bottom:28px;text-align:center}
+.ls-section{width:100%;max-width:340px;margin-bottom:20px}
+.ls-label{color:var(--muted);font-size:11px;margin-bottom:6px;letter-spacing:.5px}
+.ls-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:15px;outline:none;transition:border .2s}
+.ls-input:focus{border-color:var(--blue)}
+.ls-btn{width:100%;max-width:340px;background:var(--blue);color:#000;border:none;border-radius:10px;padding:13px;font-family:inherit;font-size:14px;font-weight:bold;cursor:pointer;margin-bottom:10px;transition:opacity .2s}
+.ls-btn:active{opacity:.8}
+.ls-btn.secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.ls-divider{width:100%;max-width:340px;display:flex;align-items:center;gap:10px;margin:4px 0 14px}
+.ls-divider span{color:var(--muted);font-size:11px;white-space:nowrap}
+.ls-divider hr{flex:1;border:none;border-top:1px solid var(--border)}
+.ls-profiles{width:100%;max-width:340px}
+.ls-profile-item{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;transition:border .2s}
+.ls-profile-item:active{background:var(--bg3)}
+.ls-profile-item:hover{border-color:var(--blue)}
+.lpi-left{display:flex;align-items:center;gap:10px}
+.lpi-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:bold;flex-shrink:0}
+.lpi-name{font-size:13px;color:var(--text)}
+.lpi-stats{font-size:11px;color:var(--muted)}
+.lpi-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px 8px;font-size:14px;border-radius:6px}
+.lpi-del:active{color:var(--red)}
+.ls-err{color:var(--red);font-size:12px;text-align:center;min-height:16px;margin-bottom:4px}
+
+/* ── HEADER ── */
+#hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{color:var(--blue);font-size:13px;font-weight:bold}
+.hstats{display:flex;gap:4px;font-size:11px;align-items:center}
+.hstats span{background:var(--bg3);padding:2px 7px;border-radius:10px;white-space:nowrap}
+#h-mode{color:var(--green)}#h-xp{color:var(--yellow)}#h-streak{color:var(--red)}#h-lvl{color:var(--purple)}
+#user-pill{display:flex;align-items:center;gap:5px;background:var(--bg3);padding:2px 8px;border-radius:10px;cursor:pointer;border:1px solid var(--border);transition:border .2s}
+#user-pill:active{border-color:var(--blue)}
+#user-pill .uname{font-size:11px;color:var(--text);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── PROGRESS ── */
+#pgbar{height:3px;background:var(--bg3);flex-shrink:0}
+#pgfill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));transition:width .6s;width:0}
+
+/* ── TABS ── */
+#tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:8px 2px;text-align:center;font-size:10px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none;line-height:1.3}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--bg)}
+.tab:active{background:var(--bg3)}
+
+/* ── DIFF BAR ── */
+#diffbar{display:flex;gap:5px;padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+#diffbar::-webkit-scrollbar{display:none}
+#diffbar.hidden{display:none}
+.dbtn{padding:3px 11px;border-radius:12px;font-size:11px;font-family:inherit;border:1px solid var(--border);cursor:pointer;white-space:nowrap;background:var(--bg3);color:var(--muted);flex-shrink:0}
+.dbtn.active{color:#000;border-color:transparent}
+.dbtn[data-d="all"].active{background:var(--blue);color:#fff}
+.dbtn[data-d="easy"].active{background:var(--easy)}
+.dbtn[data-d="medium"].active{background:var(--medium)}
+.dbtn[data-d="hard"].active{background:var(--hard)}
+.dbtn[data-d="expert"].active{background:var(--expert)}
+
+/* ── TERMINAL ── */
+#terminal{flex:1;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#terminal::-webkit-scrollbar{width:4px}
+#terminal::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ln{margin:1px 0;line-height:1.65;font-size:13px;word-break:break-word;animation:fadeUp .12s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.ln.in{color:var(--blue)}.ln.out{color:var(--text)}.ln.ok{color:var(--green)}.ln.err{color:var(--red)}.ln.warn{color:var(--yellow)}.ln.info{color:var(--blue)}.ln.hint{color:#d29922;font-style:italic}.ln.sys{color:var(--muted)}.ln.lesson{color:#a5d6ff;line-height:1.8}.ln.tip{color:var(--purple)}
+.ln.cmd-link{color:#a5d6ff;cursor:pointer;text-decoration:underline dotted}
+.ln.cmd-link:active{opacity:.7}
+.d-easy{color:var(--easy)}.d-medium{color:var(--medium)}.d-hard{color:var(--orange)}.d-expert{color:var(--red)}
+.divider{border:none;border-top:1px solid var(--border);margin:5px 0;opacity:.4}
+
+/* ── BURST ── */
+#burst{position:fixed;top:44%;left:50%;transform:translateX(-50%);pointer-events:none;opacity:0;font-size:20px;font-weight:bold;z-index:999;text-align:center;white-space:nowrap}
+#burst.pop{animation:burstAnim .9s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes burstAnim{0%{opacity:0;transform:translateX(-50%) scale(.5)}30%{opacity:1;transform:translateX(-50%) scale(1.25)}70%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-28px)}}
+@keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.shake{animation:shake .3s ease}
+
+/* ── QUICK BAR ── */
+#qbar{display:flex;gap:5px;padding:5px 10px;background:var(--bg2);border-top:1px solid var(--border);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+#qbar::-webkit-scrollbar{display:none}
+.qbtn{background:var(--bg3);color:var(--blue);padding:4px 10px;border-radius:13px;font-size:11px;font-family:inherit;border:1px solid var(--border);white-space:nowrap;cursor:pointer;flex-shrink:0}
+.qbtn:active{background:var(--border)}.qbtn.sp{color:var(--green);border-color:#2ea04340}
+
+/* ── KB TOOLBAR ── */
+#kbt{display:flex;gap:4px;padding:4px 8px;background:var(--bg2);border-top:1px solid var(--border);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+#kbt::-webkit-scrollbar{display:none}
+.ktag{background:var(--bg3);color:var(--muted);padding:4px 10px;border-radius:7px;font-size:11px;font-family:inherit;border:1px solid var(--border);white-space:nowrap;cursor:pointer;flex-shrink:0}
+.ktag:active{background:var(--border);color:var(--text)}
+
+/* ── INPUT ROW ── */
+#irow{display:flex;align-items:center;padding:6px 10px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;gap:5px;min-height:46px}
+#prompt{color:var(--green);white-space:nowrap;font-size:12px;flex-shrink:0}
+#ci{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:inherit;font-size:16px;caret-color:var(--blue);min-width:0}
+#ci::placeholder{color:var(--muted);font-size:12px}
+#hbtn{background:transparent;color:var(--yellow);border:1px solid #d2922240;border-radius:8px;padding:5px 10px;font-family:inherit;font-size:11px;cursor:pointer;flex-shrink:0;display:none}
+#hbtn:active{opacity:.7}
+#sbtn{background:var(--blue);color:#000;border:none;border-radius:8px;padding:6px 13px;font-family:inherit;font-size:13px;font-weight:bold;cursor:pointer;flex-shrink:0}
+#sbtn:active{opacity:.8}
+
+/* ── BOTTOM SHEET ── */
+#sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:flex-end}
+#sheet.open{display:flex}
+#sheetcard{background:var(--bg2);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-height:80%;overflow-y:auto;padding:16px 16px 20px;scrollbar-width:thin}
+#sheetcard h3{color:var(--blue);margin-bottom:6px;font-size:14px}
+.sbadge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;margin-bottom:10px}
+#sheet-body{line-height:1.75;font-size:13px;color:var(--text);margin-bottom:10px;white-space:pre-wrap}
+.taskbox{background:var(--bg3);border-left:3px solid var(--yellow);padding:8px 12px;border-radius:0 8px 8px 0;font-size:13px;color:var(--yellow);margin-bottom:12px}
+.whybox{background:#0d2810;border-left:3px solid var(--green);padding:8px 12px;border-radius:0 8px 8px 0;font-size:12px;color:#7ee787;margin-bottom:12px;display:none}
+#closebtn{background:var(--blue);color:#000;border:none;border-radius:8px;padding:9px;font-family:inherit;font-size:13px;font-weight:bold;cursor:pointer;width:100%}
+
+/* ── PROFILE MODAL (in-app) ── */
+#profile-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;align-items:flex-end}
+#profile-modal.open{display:flex}
+#pmcard{background:var(--bg2);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;padding:16px 16px 24px;max-height:85%;overflow-y:auto}
+.pm-title{color:var(--blue);font-size:14px;font-weight:bold;margin-bottom:14px}
+.pm-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pm-avatar-lg{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;flex-shrink:0}
+.pm-name{font-size:16px;color:var(--text);font-weight:bold}
+.pm-joined{font-size:11px;color:var(--muted)}
+.pm-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.pm-stat{background:var(--bg3);border-radius:10px;padding:10px 12px;border:1px solid var(--border)}
+.pm-stat-val{font-size:18px;font-weight:bold;color:var(--yellow)}
+.pm-stat-label{font-size:10px;color:var(--muted);margin-top:2px}
+.pm-sessions{margin:12px 0}
+.pm-session-title{font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.4px}
+.pm-session-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg3);border-radius:8px;margin-bottom:5px;font-size:12px}
+.pm-session-date{color:var(--muted)}
+.pm-session-xp{color:var(--yellow);font-weight:bold}
+.pm-session-solved{color:var(--green)}
+.pm-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.pm-btn{padding:10px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:bold;cursor:pointer;text-align:center;border:none}
+.pm-btn.danger{background:#3d1515;color:var(--red);border:1px solid #ff7b7230}
+.pm-btn.switch{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.pm-btn.close-pm{background:var(--blue);color:#000}
+.pm-btn:active{opacity:.8}
+.pm-rank{display:flex;align-items:center;gap:8px;background:var(--bg3);border-radius:10px;padding:10px 12px;border:1px solid var(--border);margin-bottom:10px}
+.pm-rank-icon{font-size:22px}
+.pm-rank-info .pm-rank-title{font-size:13px;color:var(--text)}
+.pm-rank-info .pm-rank-sub{font-size:11px;color:var(--muted)}
+.pm-confirm{display:none;background:#3d1515;border:1px solid var(--red);border-radius:10px;padding:12px;margin-top:8px}
+.pm-confirm p{color:var(--text);font-size:13px;margin-bottom:10px}
+.pm-confirm-btns{display:flex;gap:8px}
+.pm-confirm-btns button{flex:1;padding:8px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer;border:none}
+.pm-confirm-btns .yes{background:var(--red);color:#fff}
+.pm-confirm-btns .no{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     LOGIN / PROFILE SELECTION SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="ls-logo">🐧</div>
+  <div class="ls-title">LinuxSim</div>
+  <div class="ls-sub">Real Linux skills. One command at a time.</div>
+
+  <div class="ls-section">
+    <div class="ls-label">NEW PROFILE</div>
+    <input class="ls-input" id="ls-name-input" type="text" maxlength="20" placeholder="Enter your name..." autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+    <div class="ls-err" id="ls-err"></div>
+  </div>
+  <button class="ls-btn" onclick="createProfile()">Create Profile & Start</button>
+
+  <div class="ls-divider"><hr><span>or continue as</span><hr></div>
+
+  <div class="ls-profiles" id="ls-profiles-list"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════════ -->
+<div id="app" style="display:none">
+  <div id="hdr">
+    <div class="logo">🐧 LinuxSim</div>
+    <div class="hstats">
+      <span id="h-mode">LEARN</span>
+      <span id="h-xp">⭐ 0</span>
+      <span id="h-streak">🔥 0</span>
+      <div id="user-pill" onclick="openProfileModal()">
+        <span id="user-pill-avatar" style="font-size:13px">👤</span>
+        <span class="uname" id="user-pill-name">—</span>
+      </div>
+    </div>
+  </div>
+  <div id="pgbar"><div id="pgfill"></div></div>
+  <div id="tabs">
+    <div class="tab active" id="tab-terminal" onclick="switchTab('terminal')">⌨️<br>Terminal</div>
+    <div class="tab" id="tab-ref" onclick="switchTab('ref')">📖<br>Reference</div>
+    <div class="tab" id="tab-help" onclick="switchTab('help')">📚<br>Commands</div>
+    <div class="tab" id="tab-scores" onclick="switchTab('scores')">🏆<br>Scores</div>
+    <div class="tab" id="tab-progress" onclick="switchTab('progress')">📊<br>Stats</div>
+  </div>
+  <div id="diffbar" class="hidden">
+    <button class="dbtn active" data-d="all" onclick="setDiff('all')">All 50</button>
+    <button class="dbtn" data-d="easy" onclick="setDiff('easy')">🟢 Easy</button>
+    <button class="dbtn" data-d="medium" onclick="setDiff('medium')">🟡 Medium</button>
+    <button class="dbtn" data-d="hard" onclick="setDiff('hard')">🟠 Hard</button>
+    <button class="dbtn" data-d="expert" onclick="setDiff('expert')">🔴 Expert</button>
+  </div>
+  <div id="terminal"></div>
+  <div id="qbar">
+    <button class="qbtn sp" onclick="fill('learn')">📖 Learn</button>
+    <button class="qbtn sp" onclick="fill('game')">🎮 Game</button>
+    <button class="qbtn" onclick="fill('ls')">ls</button>
+    <button class="qbtn" onclick="fill('pwd')">pwd</button>
+    <button class="qbtn" onclick="fill('cd ')">cd</button>
+    <button class="qbtn" onclick="fill('cat ')">cat</button>
+    <button class="qbtn" onclick="fill('grep ')">grep</button>
+    <button class="qbtn" onclick="fill('df -h')">df</button>
+    <button class="qbtn" onclick="fill('free -h')">free</button>
+    <button class="qbtn" onclick="fill('top')">top</button>
+    <button class="qbtn" onclick="fill('ps aux')">ps</button>
+    <button class="qbtn" onclick="fill('clear')">🗑 clear</button>
+  </div>
+  <div id="kbt">
+    <button class="ktag" onclick="ins('/')">/ </button>
+    <button class="ktag" onclick="ins('-')">-</button>
+    <button class="ktag" onclick="ins('*')">*</button>
+    <button class="ktag" onclick="ins('.')">.</button>
+    <button class="ktag" onclick="ins('~')">~</button>
+    <button class="ktag" onclick="ins(' | ')">|</button>
+    <button class="ktag" onclick="ins(' > ')">></button>
+    <button class="ktag" onclick="ins(' >> ')">>></button>
+    <button class="ktag" onclick="histUp()">↑ prev</button>
+    <button class="ktag" onclick="histDown()">↓ next</button>
+    <button class="ktag" onclick="tabComplete()">⇥ tab</button>
+  </div>
+  <div id="irow">
+    <span id="prompt">~$</span>
+    <input id="ci" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" placeholder="type a command...">
+    <button id="hbtn" onclick="useHint()">💡 Hint</button>
+    <button id="sbtn" onclick="submitCmd()">↵</button>
+  </div>
+</div>
+<div id="burst"></div>
+
+<!-- Lesson Sheet -->
+<div id="sheet">
+  <div id="sheetcard">
+    <h3 id="sheet-title"></h3>
+    <div id="sheet-badge"></div>
+    <div id="sheet-body"></div>
+    <div class="taskbox" id="sheet-task"></div>
+    <div class="whybox" id="sheet-why"></div>
+    <button id="closebtn" onclick="closeSheet()">Got it — let me try! 💪</button>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div id="profile-modal">
+  <div id="pmcard">
+    <div class="pm-title">👤 My Profile</div>
+    <div class="pm-row">
+      <div class="pm-avatar-lg" id="pm-avatar"></div>
+      <div>
+        <div class="pm-name" id="pm-name-display"></div>
+        <div class="pm-joined" id="pm-joined"></div>
+      </div>
+    </div>
+    <div class="pm-rank" id="pm-rank-row">
+      <div class="pm-rank-icon" id="pm-rank-icon"></div>
+      <div class="pm-rank-info">
+        <div class="pm-rank-title" id="pm-rank-title"></div>
+        <div class="pm-rank-sub" id="pm-rank-sub"></div>
+      </div>
+    </div>
+    <div class="pm-stats-grid">
+      <div class="pm-stat"><div class="pm-stat-val" id="pm-xp-val">0</div><div class="pm-stat-label">TOTAL XP</div></div>
+      <div class="pm-stat"><div class="pm-stat-val" id="pm-streak-val" style="color:var(--red)">0</div><div class="pm-stat-label">BEST STREAK</div></div>
+      <div class="pm-stat"><div class="pm-stat-val" id="pm-solved-val" style="color:var(--green)">0</div><div class="pm-stat-label">SOLVED</div></div>
+      <div class="pm-stat"><div class="pm-stat-val" id="pm-sessions-val" style="color:var(--blue)">0</div><div class="pm-stat-label">SESSIONS</div></div>
+    </div>
+    <div class="pm-sessions">
+      <div class="pm-session-title">RECENT SESSIONS</div>
+      <div id="pm-sessions-list"></div>
+    </div>
+    <div class="pm-actions">
+      <button class="pm-btn close-pm" onclick="closeProfileModal()">Close</button>
+      <button class="pm-btn switch" onclick="closeProfileModal();logout()">Switch Profile</button>
+      <button class="pm-btn danger" onclick="showResetConfirm()">Reset My Progress</button>
+      <div class="pm-confirm" id="pm-confirm">
+        <p>This will wipe all your XP, progress, and session history. Are you sure?</p>
+        <div class="pm-confirm-btns">
+          <button class="yes" onclick="confirmReset()">Yes, reset</button>
+          <button class="no" onclick="hideResetConfirm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// PROFILE SYSTEM
+// ═══════════════════════════════════════════════════════════════
+const AVATAR_COLORS=['#1a4a8a','#1a4a1a','#4a1a4a','#4a3800','#3d1515','#1a3a4a'];
+const RANKS=[
+  {min:0,icon:'🌱',title:'Newbie',sub:'Just getting started'},
+  {min:200,icon:'🔧',title:'Tinkerer',sub:'Learning the basics'},
+  {min:500,icon:'⚙️',title:'SysAdmin',sub:'Comfortable in the terminal'},
+  {min:900,icon:'🔍',title:'Security Analyst',sub:'Can spot a breach'},
+  {min:1500,icon:'🚀',title:'DevOps Pro',sub:'Production-ready skills'},
+  {min:2500,icon:'💀',title:'Root God',sub:'Ultimate Linux mastery'},
+];
+
+function getProfiles(){
+  try{return JSON.parse(localStorage.getItem('lsim_profiles')||'[]')}catch(e){return[]}
+}
+function saveProfiles(profiles){
+  localStorage.setItem('lsim_profiles',JSON.stringify(profiles));
+}
+function getProfileKey(name){return'lsim_p_'+name.toLowerCase().replace(/\s+/g,'_')}
+function loadProfileData(name){
+  try{return JSON.parse(localStorage.getItem(getProfileKey(name))||'null')}catch(e){return null}
+}
+function saveProfileData(name,data){
+  localStorage.setItem(getProfileKey(name),JSON.stringify(data));
+}
+function getAvatarColor(name){
+  let h=0;for(let i=0;i<name.length;i++)h=(h<<5)-h+name.charCodeAt(i);
+  return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length];
+}
+function getInitials(name){
+  return name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+}
+function getRank(xp){
+  let r=RANKS[0];
+  for(const rk of RANKS){if(xp>=rk.min)r=rk;}
+  return r;
+}
+function getNextRank(xp){
+  for(const rk of RANKS){if(xp<rk.min)return rk;}
+  return null;
+}
+
+let currentProfile=null; // name string
+let P=null; // profile data object
+
+function newProfileData(name){
+  return{
+    name,created:Date.now(),lastSeen:Date.now(),
+    xp:0,bestStreak:0,totalSessions:0,
+    mode:'learn',level:0,streak:0,histIdx:-1,path:'/',
+    history:[],diffFilter:'all',hintsUsed:0,hintXpLost:0,wrongAttempts:0,
+    progress:{learnDone:[],gameDone:[]},
+    sessions:[],           // [{date, xp, solved, duration}]
+    sessionStart:Date.now(),sessionXp:0,sessionSolved:0,
+  };
+}
+
+// ── LOGIN SCREEN ──────────────────────────────────────────────
+function renderProfileList(){
+  const profiles=getProfiles();
+  const el=document.getElementById('ls-profiles-list');
+  el.innerHTML='';
+  if(profiles.length===0){
+    el.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:8px 0">No saved profiles yet</div>';
+    return;
+  }
+  profiles.forEach(name=>{
+    const pd=loadProfileData(name);
+    if(!pd)return;
+    const rank=getRank(pd.xp);
+    const color=getAvatarColor(name);
+    const initials=getInitials(name);
+    const div=document.createElement('div');
+    div.className='ls-profile-item';
+    div.innerHTML=`
+      <div class="lpi-left" onclick="loginAs('${name.replace(/'/g,"\\'")}')">
+        <div class="lpi-avatar" style="background:${color};color:#fff">${initials}</div>
+        <div>
+          <div class="lpi-name">${rank.icon} ${name}</div>
+          <div class="lpi-stats">${pd.xp} XP · ${pd.progress.gameDone.length} solved · ${pd.totalSessions} sessions</div>
+        </div>
+      </div>
+      <button class="lpi-del" onclick="deleteProfile('${name.replace(/'/g,"\\'")}',event)" title="Delete">✕</button>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function createProfile(){
+  const input=document.getElementById('ls-name-input');
+  const name=input.value.trim();
+  const err=document.getElementById('ls-err');
+  if(!name){err.textContent='Please enter a name.';return;}
+  if(name.length<2){err.textContent='Name must be at least 2 characters.';return;}
+  const profiles=getProfiles();
+  if(profiles.map(p=>p.toLowerCase()).includes(name.toLowerCase())){
+    err.textContent='That name is already taken.';return;
+  }
+  err.textContent='';
+  profiles.push(name);
+  saveProfiles(profiles);
+  const pd=newProfileData(name);
+  saveProfileData(name,pd);
+  loginAs(name);
+}
+
+function loginAs(name){
+  const pd=loadProfileData(name);
+  if(!pd){renderProfileList();return;}
+  currentProfile=name;
+  P=pd;
+  P.lastSeen=Date.now();
+  P.totalSessions=(P.totalSessions||0)+1;
+  P.sessionStart=Date.now();
+  P.sessionXp=0;
+  P.sessionSolved=0;
+  saveP();
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').style.display='flex';
+  bootApp();
+}
+
+function deleteProfile(name,e){
+  e.stopPropagation();
+  if(!confirm('Delete profile "'+name+'"? This cannot be undone.'))return;
+  let profiles=getProfiles().filter(p=>p!==name);
+  saveProfiles(profiles);
+  localStorage.removeItem(getProfileKey(name));
+  renderProfileList();
+}
+
+function logout(){
+  endSession();
+  currentProfile=null;P=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('ls-name-input').value='';
+  document.getElementById('ls-err').textContent='';
+  renderProfileList();
+}
+
+function endSession(){
+  if(!P)return;
+  const dur=Math.round((Date.now()-P.sessionStart)/60000);
+  const xpEarned=P.sessionXp||0;
+  const solved=P.sessionSolved||0;
+  if(xpEarned>0||solved>0){
+    if(!P.sessions)P.sessions=[];
+    P.sessions.unshift({date:Date.now(),xp:xpEarned,solved,duration:dur});
+    if(P.sessions.length>10)P.sessions=P.sessions.slice(0,10);
+  }
+  saveP();
+}
+
+function saveP(){
+  if(!currentProfile||!P)return;
+  saveProfileData(currentProfile,P);
+}
+
+document.getElementById('ls-name-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter')createProfile();
+});
+
+// ── PROFILE MODAL ─────────────────────────────────────────────
+function openProfileModal(){
+  if(!P)return;
+  const rank=getRank(P.xp);
+  const nextRank=getNextRank(P.xp);
+  const color=getAvatarColor(P.name);
+  document.getElementById('pm-avatar').style.background=color;
+  document.getElementById('pm-avatar').style.color='#fff';
+  document.getElementById('pm-avatar').textContent=getInitials(P.name);
+  document.getElementById('pm-name-display').textContent=P.name;
+  document.getElementById('pm-joined').textContent='Joined '+new Date(P.created).toLocaleDateString()+' · Last seen: today';
+  document.getElementById('pm-rank-icon').textContent=rank.icon;
+  document.getElementById('pm-rank-title').textContent=rank.title;
+  document.getElementById('pm-rank-sub').textContent=nextRank?rank.sub+' · '+( nextRank.min-P.xp)+' XP to '+nextRank.title:rank.sub+' · MAX RANK';
+  document.getElementById('pm-xp-val').textContent=P.xp;
+  document.getElementById('pm-streak-val').textContent=P.bestStreak;
+  document.getElementById('pm-solved-val').textContent=(P.progress.gameDone||[]).length;
+  document.getElementById('pm-sessions-val').textContent=P.totalSessions||0;
+  const sl=document.getElementById('pm-sessions-list');
+  sl.innerHTML='';
+  const sess=P.sessions||[];
+  if(sess.length===0){
+    sl.innerHTML='<div style="color:var(--muted);font-size:12px;padding:6px 0">No sessions recorded yet — play to earn your first!</div>';
+  }else{
+    sess.forEach(s=>{
+      const d=new Date(s.date);
+      const dateStr=d.toLocaleDateString()+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      const dur=s.duration>=1?s.duration+'min':'<1min';
+      sl.innerHTML+=`<div class="pm-session-item"><span class="pm-session-date">${dateStr} (${dur})</span><span><span class="pm-session-xp">+${s.xp} XP</span> <span class="pm-session-solved">${s.solved} solved</span></span></div>`;
+    });
+  }
+  hideResetConfirm();
+  document.getElementById('profile-modal').classList.add('open');
+}
+function closeProfileModal(){document.getElementById('profile-modal').classList.remove('open');}
+function showResetConfirm(){document.getElementById('pm-confirm').style.display='block';}
+function hideResetConfirm(){document.getElementById('pm-confirm').style.display='none';}
+function confirmReset(){
+  if(!P)return;
+  const name=P.name;
+  const created=P.created;
+  P=newProfileData(name);
+  P.created=created;
+  P.totalSessions=(P.totalSessions||0);
+  saveP();
+  S=buildState();
+  updateHUD();updatePrompt();
+  closeProfileModal();
+  T.innerHTML='';
+  burst('🔄 Reset!','#ff7b72');
+  pr('✅ Progress reset. Starting fresh, '+name+'!','ok');
+  pr('Type learn to begin or game to jump into scenarios.','info');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE (mirrors P)
+// ══════════════════════════════════════════════════════════════════
+function buildState(){
+  return{
+    mode:P.mode||'learn',level:P.level||0,xp:P.xp||0,
+    streak:P.streak||0,bestStreak:P.bestStreak||0,
+    histIdx:-1,path:P.path||'/',
+    history:P.history||[],diffFilter:P.diffFilter||'all',
+    hintsUsed:P.hintsUsed||0,hintXpLost:P.hintXpLost||0,
+    wrongAttempts:P.wrongAttempts||0,
+    progress:P.progress||{learnDone:[],gameDone:[]},
+    fs:{
+      '/':['home','var','etc','tmp','logs'],
+      '/home':['user','admin'],
+      '/home/user':['notes.txt','script.sh','.bashrc'],
+      '/home/admin':['config.cfg'],
+      '/var':['log','www','run'],
+      '/var/log':['syslog','auth.log','nginx.log','app.log','kern.log'],
+      '/var/www':['index.html','app.py'],
+      '/var/run':['nginx.pid','mysql.pid'],
+      '/etc':['passwd','hosts','nginx.conf','crontab','sudoers','resolv.conf'],
+      '/tmp':['tmpfile.txt','crash.dump'],
+      '/logs':['error.log','access.log']
+    },
+    fc:{
+      '/home/user/notes.txt':'Linux is awesome!\nPractice daily.\nUse man pages.',
+      '/home/user/script.sh':'#!/bin/bash\necho "Hello World"\nls -la',
+      '/home/user/.bashrc':'export PATH=$PATH:/usr/local/bin\nalias ll="ls -la"',
+      '/var/log/syslog':'May 1 10:01 systemd: Started apt upgrade.\nMay 1 10:15 kernel: [UFW BLOCK] SRC=192.168.1.99\nMay 1 10:30 sshd: Accepted publickey for user',
+      '/var/log/auth.log':'May 1 09:00 sshd: Failed password for root from 192.168.1.100\nMay 1 09:00 sshd: Failed password for root from 192.168.1.100\nMay 1 09:01 sshd: Accepted password for user from 10.0.0.5\nMay 1 09:05 sudo: user : COMMAND=/bin/bash',
+      '/var/log/nginx.log':'192.168.1.1 "GET / HTTP/1.1" 200\n192.168.1.2 "GET /api" 500\n192.168.1.3 "GET /login" 404',
+      '/var/log/app.log':'[ERROR] Database connection failed at 10:22:01\n[INFO]  Server started on port 3000\n[ERROR] Out of memory at 10:45:33\n[WARN]  Disk usage at 89%\n[ERROR] Segfault in worker thread 4',
+      '/var/log/kern.log':'May 1 08:00 kernel: EXT4-fs error (device sda1)\nMay 1 08:01 kernel: Out of memory: Kill process 1234 (nginx)\nMay 1 08:02 kernel: oom_kill_process: oom_score_adj=0',
+      '/var/run/nginx.pid':'1234','/var/run/mysql.pid':'1456',
+      '/etc/passwd':'root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000::/home/user:/bin/bash\nwww-data:x:33:33::/var/www:/usr/sbin/nologin',
+      '/etc/hosts':'127.0.0.1 localhost\n192.168.1.10 webserver\n192.168.1.20 dbserver',
+      '/etc/resolv.conf':'nameserver 8.8.8.8\nnameserver 8.8.4.4\nsearch local.domain',
+      '/etc/nginx.conf':'server {\n  listen 80;\n  server_name localhost;\n  root /var/www;\n}',
+      '/etc/crontab':'0 2 * * * root /usr/bin/apt-get update\n*/5 * * * * user /home/user/script.sh',
+      '/etc/sudoers':'root ALL=(ALL:ALL) ALL\nuser ALL=(ALL) NOPASSWD:/usr/bin/apt-get',
+      '/logs/error.log':'ERROR: nginx failed to start\nERROR: port 80 already in use\nWARN: certificate expires in 3 days',
+      '/logs/access.log':'GET /index.html 200\nPOST /login 401\nGET /admin 403',
+      '/tmp/crash.dump':'[crash] Process nginx killed by signal 11\n[crash] Core dumped to /tmp/core.1234',
+      '/home/admin/config.cfg':'db_host=localhost\ndb_port=5432\nmax_connections=100',
+    }
+  };
+}
+let S={};
+
+function syncToProfile(){
+  if(!P)return;
+  P.mode=S.mode;P.level=S.level;P.xp=S.xp;
+  P.streak=S.streak;P.bestStreak=S.bestStreak;
+  P.path=S.path;P.history=S.history.slice(-50);
+  P.diffFilter=S.diffFilter;P.hintsUsed=S.hintsUsed;
+  P.hintXpLost=S.hintXpLost;P.wrongAttempts=S.wrongAttempts;
+  P.progress=S.progress;
+  saveP();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LEARN / GAME DATA
+// ══════════════════════════════════════════════════════════════════
+const LEARN=[
+  {title:'Welcome to Linux 🐧',body:'Linux powers ~96% of internet servers, all Android phones, and most supercomputers. You talk to it through a terminal by typing commands.\n\nThink of it as a powerful assistant: precise, instant, and endlessly capable — once you know the commands.\n\nReal sysadmins, DevOps engineers, and security analysts use these same commands every single day.',task:'Type whoami to see which user you\'re logged in as.',check:c=>c.includes('whoami'),out:()=>['user'],why:'whoami tells you your active username. Critical when you SSH into remote servers and need to confirm your identity or permissions level.'},
+  {title:'Where Am I? 📍',body:'In Linux, everything lives in a tree of directories. You\'re always "inside" one — called your working directory.\n\nThe tree starts at / (called "root").\n\nExample path: /home/user/documents\n  / = root of everything\n  home = inside root\n  user = inside home\n  documents = inside user',task:'Type pwd to print your current directory path.',check:c=>c.includes('pwd'),out:()=>[S.path],why:'pwd (Print Working Directory) shows your full path. You\'ll use this constantly after navigating to re-orientate yourself.'},
+  {title:'Listing Files 📁',body:'ls lists what\'s inside a directory — like opening a folder.\n\nUseful flags:\n  ls -l    long view (permissions, owner, size, date)\n  ls -a    show hidden files (names starting with .)\n  ls -la   both combined\n  ls -lh   human-readable sizes\n  ls -lhS  sort by size (biggest first)',task:'Type ls to see contents of the current directory.',check:c=>c.split(' ')[0]==='ls',out:()=>S.fs[S.path]||['(empty)'],why:'ls is one of the 5 most-used Linux commands. The -la flag reveals hidden config files and exact permissions.'},
+  {title:'Moving Around 🚶',body:'cd (Change Directory) moves you between directories.\n\nShortcuts:\n  cd ..       go up one level\n  cd ~        go straight to home\n  cd /        go to filesystem root\n  cd /var/log go to an absolute path\n  cd log      relative path (must exist here)',task:'Type cd /var/log to navigate to the log directory.',check:c=>c.includes('cd')&&(c.includes('/var')||c.includes('log')),out:()=>{S.path='/var/log';updatePrompt();return[''];},why:'Navigating quickly is a core skill. Combine cd with tab-completion to move anywhere in seconds.'},
+  {title:'Reading Files 📄',body:'cat prints a file\'s full content to screen.\n\nRelated commands:\n  less [file]     scroll through large file (q to quit)\n  head -n 10 [f]  first 10 lines only\n  tail -n 10 [f]  last 10 lines only\n  tail -f [f]     follow live (watch new lines appear)\n\nFor config files and short logs, cat is fastest.\nFor 10,000-line logs, use tail or grep.',task:'Type cat /var/log/app.log to read the application log.',check:c=>c.includes('cat')&&c.includes('log'),out:()=>[S.fc['/var/log/app.log']],why:'Reading files is 80% of Linux debugging. cat for quick reads, tail -f for live monitoring during incidents.'},
+  {title:'Searching Inside Files 🔍',body:'grep searches for a pattern inside a file and prints matching lines.\n\nPowerful flags:\n  grep -i  "error"      case-insensitive\n  grep -r  "error" /var recursive (all subdirs)\n  grep -n  "error" f    show line numbers\n  grep -c  "error" f    count of matches\n  grep -v  "info"  f    invert: non-matching lines\n  grep -E  "err|warn"   multiple patterns (regex)',task:'Type grep ERROR /var/log/app.log to find all error lines.',check:c=>c.includes('grep')&&c.toLowerCase().includes('error'),out:()=>['[ERROR] Database connection failed at 10:22:01','[ERROR] Out of memory at 10:45:33','[ERROR] Segfault in worker thread 4'],why:'grep filters noise from huge logs. Combine with wc -l to count errors: grep -c ERROR app.log'},
+  {title:'Disk Space 💾',body:'df shows filesystem disk usage across all partitions.\n\n  df -h    human-readable (MB/GB)\n  df -T    also show filesystem type\n\nThe Use% column is what matters:\n  < 80%  healthy\n  80-90% monitor\n  > 90%  warning — take action NOW\n  100%   crisis — apps crash, logs stop\n\nWhen disk is full:\n  1. df -h  → confirm which partition\n  2. du -sh /* → find who\'s using space\n  3. Clear logs or expand storage',task:'Type df -h for human-readable disk usage.',check:c=>c.includes('df'),out:()=>['Filesystem  Size  Used Avail Use%','/dev/sda1    50G   43G  4.2G  92% /','/dev/sdb1   100G   12G  88G   12% /data'],why:'Disk full is among the most common server incidents. df -h belongs on your first triage checklist.'},
+  {title:'Memory (RAM) Check 🧠',body:'free shows RAM and swap memory usage.\n\n  free -h  human-readable output\n\nReading the output:\n  total     physical RAM installed\n  used      currently in use\n  free      completely unused\n  available what new processes can use\n  Swap      virtual memory on disk (SLOW)\n\nDanger signs:\n  available < 200MB  → critical\n  Swap Used > 50%    → memory leak likely',task:'Type free -h to check memory usage.',check:c=>c.includes('free'),out:()=>['            total  used  free  available','Mem:          7.7G  5.2G  512M      2.1G','Swap:         2.0G  1.8G  200M'],why:'High RAM + high swap = memory leak. Find it: ps aux --sort=-%mem | head -10'},
+  {title:'Running Processes ⚙️',body:'ps shows currently running processes.\n\n  ps aux      all processes, all users, full detail\n  ps aux | grep nginx  find specific process\n\n  top         live real-time view (like Task Manager)\n    q = quit  k = kill  M = sort by mem  P = sort by CPU\n\nKey columns:\n  PID      process ID (needed to kill it)\n  %CPU     CPU usage\n  %MEM     RAM usage\n  STAT     S=sleeping D=waiting-on-disk R=running\n  COMMAND  what is running\n\nKill: kill -9 PID',task:'Type ps aux to list all running processes.',check:c=>c.includes('ps'),out:()=>['USER      PID %CPU %MEM STAT COMMAND','root        1  0.0  0.1 S    /sbin/init','www-data 1234 98.2 12.4 D    nginx','mysql    1456  2.1 54.9 S    mysqld'],why:'A process in D-state or at 98% CPU is often the root cause of slowdowns. ps + kill are essential tools.'},
+  {title:'File Permissions 🔒',body:'Every Linux file has 3 permission groups:\n  Owner | Group | Others\n  rwx     rwx     rwx\n  r=read(4) w=write(2) x=execute(1)\n\nExample: -rwxr-xr--\n  Owner: rwx = read, write, execute\n  Group: r-x = read and execute\n  Others: r-- = read only\n\nCommon modes:\n  chmod 755 file   rwxr-xr-x (scripts)\n  chmod 644 file   rw-r--r-- (regular files)\n  chmod 600 file   rw------- (SSH private keys)\n  chmod +x file    add execute for all\n  chown user:group change ownership',task:'Type chmod +x /home/user/script.sh to make it executable.',check:c=>c.includes('chmod'),out:()=>['Permissions updated → -rwxr-xr-x script.sh'],why:'chmod 777 (everyone can write) is a security disaster on servers. SSH keys MUST be 600 or SSH rejects them.'},
+  {title:'Finding Files 🔎',body:'find searches the entire filesystem by various criteria.\n\nPowerful examples:\n  find /var/log -name "*.log"   by name pattern\n  find / -size +100M -type f    files over 100MB\n  find /etc -mtime -1           modified last 24h\n  find . -type f -name "*.sh"   shell scripts\n  find / -perm -4000            SUID files (security)\n  find /tmp -mtime +7 -delete   delete old tmp files\n\nSuppress permission errors: add 2>/dev/null',task:'Type find /var/log -name "*.log" to find all log files.',check:c=>c.includes('find'),out:()=>['/var/log/syslog','/var/log/auth.log','/var/log/nginx.log','/var/log/app.log'],why:'find is essential for security audits, disk cleanup, and incident response (find recently modified configs).'},
+  {title:'Network Basics 🌐',body:'Key network diagnostic commands:\n\n  ping HOST        test basic reachability\n  nslookup HOST    test DNS resolution\n  traceroute HOST  trace path, find where drops occur\n  curl URL         fetch URL, test HTTP responses\n  netstat -tlnp    listening ports + which process\n  ss -tlnp         faster modern netstat alternative\n\nDiagnosis order for any connectivity issue:\n  1. ping IP       → reachable at all?\n  2. nslookup name → DNS resolving?\n  3. traceroute    → where is it dropping?\n  4. netstat       → service actually listening?',task:'Type ping google.com to test network connectivity.',check:c=>c.includes('ping'),out:()=>['PING google.com (142.250.77.46)','64 bytes: icmp_seq=0 time=12.3ms','64 bytes: icmp_seq=1 time=11.8ms','0% packet loss ✅'],why:'A structured network diagnosis saves hours. Most outages are: DNS broken, wrong port, firewall blocking, or service not running.'},
+];
+
+const ALL_SCENARIOS=[
+{id:1,diff:'easy',cat:'navigation',prob:'You just SSH\'d into an unknown server.\nYou need to know your current location in the filesystem before doing anything else.\n\nWhat command tells you your current directory?',accepts:['pwd'],hints:['It stands for "Print Working Directory".','3 letters. No arguments needed.','Type: pwd'],win:'pwd is the first command pros type on an unfamiliar server. Always know where you are before making changes.',xp:20},
+{id:2,diff:'easy',cat:'navigation',prob:'You\'re troubleshooting a server and need to see what files exist in /var/log.\n\nWhat command lists directory contents?',accepts:['ls'],hints:['Think "list".','Just 2 letters.','Type: ls /var/log'],win:'ls is indispensable. Use ls -la for full details including hidden files and permissions.',xp:20},
+{id:3,diff:'easy',cat:'log',prob:'You need to quickly read /etc/hosts to check configured hostnames.\n\nHow do you print its full contents to the screen?',accepts:['cat'],hints:['It "concatenates" and displays files.','3 letters.','Type: cat /etc/hosts'],win:'cat is perfect for short files. For files > 100 lines, use less (scrollable) to avoid flooding your screen.',xp:20},
+{id:4,diff:'easy',cat:'process',prob:'You\'re on a shared server and need to confirm which user account you\'re running as.\n\nWhat single command reveals your username?',accepts:['whoami'],hints:['It literally asks the OS "who am I?".','One word, no spaces.','Type: whoami'],win:'whoami is essential when switching users or SSHing between servers. Never assume — always confirm.',xp:20},
+{id:5,diff:'easy',cat:'navigation',prob:'You\'re in /var/log after investigating some logs.\nNow you need to get back to your home directory.\n\nWhat command takes you home?',accepts:['cd'],hints:['Think "change directory".','There\'s a shortcut symbol for home.','Type: cd ~ or just: cd'],win:'cd ~ is the fastest path home. cd with no arguments also works. Home is typically /home/username.',xp:20},
+{id:6,diff:'easy',cat:'log',prob:'Your app writes logs to /var/log/app.log in real time.\nYou want to watch new log lines appear as they\'re written — live.\n\nWhat command follows a file as it grows?',accepts:['tail'],hints:['Think of the "tail" end of a file.','You need a flag to follow/watch it live.','Type: tail -f /var/log/app.log'],win:'tail -f is essential for live log monitoring. During deployments or incidents, keep this running in a separate terminal.',xp:25},
+{id:7,diff:'easy',cat:'disk',prob:'Users are complaining the server is sluggish.\nYou want to quickly check if the disk is full — a common root cause.\n\nWhat command shows disk space usage across filesystems?',accepts:['df'],hints:['Think "disk free".','Add -h for human-readable output (MB/GB).','Type: df -h'],win:'df -h takes 2 seconds and rules out disk full immediately. Always run this early in any triage.',xp:25},
+{id:8,diff:'easy',cat:'memory',prob:'An application keeps slowing down and you suspect memory pressure.\nYou need a quick snapshot of how much RAM is used vs available.\n\nWhat command shows memory usage?',accepts:['free'],hints:['What command shows how much memory is "free"?','Add -h for human-readable sizes.','Type: free -h'],win:'free -h shows RAM and swap. If "available" < 200MB and swap is heavily used, you almost certainly have a memory leak.',xp:25},
+{id:9,diff:'easy',cat:'network',prob:'You need to verify basic connectivity to a remote database server at 192.168.1.20 before investigating deeper.\n\nWhat is the simplest command to test if a host responds?',accepts:['ping'],hints:['It sends ICMP echo packets and waits for a reply.','Type: ping 192.168.1.20'],win:'ping is always step 1 in network diagnosis. 0% packet loss = host is up. 100% loss = unreachable.',xp:25},
+{id:10,diff:'easy',cat:'log',prob:'A log file has 50,000 lines. You only need to check the most recent entries.\n\nWhat command shows just the last N lines of a file?',accepts:['tail'],hints:['Think of the end of a file.','You can specify how many lines with -n.','Type: tail -n 20 /var/log/app.log'],win:'tail -n 50 shows the last 50 lines. Combine with grep: tail -n 1000 app.log | grep ERROR',xp:25},
+{id:11,diff:'easy',cat:'process',prob:'The server seems slow. You want a live, refreshing view of all processes and their resource usage.\n\nWhat command gives you a real-time process monitor?',accepts:['top','htop'],hints:['It\'s like Task Manager for Linux.','One of the options is called top.','Type: top'],win:'top updates every 3 seconds. Press M to sort by memory, P to sort by CPU, q to exit.',xp:25},
+{id:12,diff:'easy',cat:'log',prob:'You need to check the first few lines of /var/log/syslog to see when the server last started.\n\nWhat command shows just the beginning of a file?',accepts:['head'],hints:['The opposite of tail.','Think of the "head" (top) of a file.','Type: head /var/log/syslog'],win:'head -n 5 shows 5 lines. Useful for checking file headers or recent boot messages.',xp:20},
+{id:13,diff:'easy',cat:'find',prob:'You need to search for all files ending in .log inside /var/log.\n\nWhat command searches the filesystem by filename pattern?',accepts:['find'],hints:['It literally "finds" files.','You can use wildcards with -name.','Type: find /var/log -name "*.log"'],win:'find is the go-to for locating files. Use -type f for files only. Add 2>/dev/null to hide permission errors.',xp:25},
+{id:14,diff:'easy',cat:'navigation',prob:'You need to create a new directory called "backups" inside /var.\n\nWhat command creates a new directory?',accepts:['mkdir'],hints:['Think "make directory".','Type: mkdir /var/backups'],win:'mkdir -p creates parent dirs too: mkdir -p /var/backups/2026/may creates the whole path at once.',xp:20},
+{id:15,diff:'easy',cat:'log',prob:'You need to find all lines containing "FAILED" inside /var/log/auth.log to identify login failures.\n\nWhat command searches for text patterns inside files?',accepts:['grep'],hints:['It filters lines matching a pattern — like Ctrl+F for the terminal.','Type: grep FAILED /var/log/auth.log'],win:'grep is among the most powerful Linux tools. -i makes it case-insensitive. -c counts matches. -r searches recursively.',xp:25},
+{id:16,diff:'medium',cat:'log',prob:'🔴 INCIDENT: Web server returning 500 errors to all users.\nNginx is running but the app itself may have crashed.\n\nYour first step: check the application logs for error messages.',accepts:['cat','grep','tail','less','head'],hints:['When an app crashes, it writes to log files.','App logs are usually in /var/log/ — check app.log.','Try: cat /var/log/app.log or grep ERROR /var/log/app.log'],win:'Found it — database connection failures in app.log. Next step: systemctl status mysql, then systemctl restart mysql.',xp:50},
+{id:17,diff:'medium',cat:'process',prob:'🔴 INCIDENT: Server load average is extremely high. Pages time out. CPU is the suspect.\n\nIdentify which process is consuming the most CPU in real time.',accepts:['top','htop','ps'],hints:['You need a real-time view of CPU usage per process.','There\'s a tool that updates live, like Task Manager.','Try: top — then press P to sort by CPU usage'],win:'nginx at 98% CPU — stuck in an infinite loop! Kill: kill -9 1234, investigate cause, then restart.',xp:50},
+{id:18,diff:'medium',cat:'disk',prob:'🔴 INCIDENT: Deployments fail with "No space left on device".\ndf -h shows root at 92%. Now find WHICH directory is eating all the space.\n\nBreak down disk usage by directory.',accepts:['du'],hints:['df shows totals per partition. du breaks it down further.','du can show sizes in human-readable format.','Try: du -sh /var/log/* or du -sh /* for top-level'],win:'Logs in /var/log are 40GB! Rotate them: find /var/log -name "*.log" -mtime +30 -delete or set up logrotate.',xp:50},
+{id:19,diff:'medium',cat:'network',prob:'🔴 INCIDENT: App says "Connection refused" to the database at 192.168.1.20.\nPing works so the host is up, but the DB port might not be open.\n\nCheck which ports are currently listening on this server.',accepts:['netstat','ss'],hints:['The host is reachable but the service might not be listening.','You need to check open/listening ports.','Try: netstat -tlnp or ss -tlnp'],win:'Port 3306 (MySQL) is NOT in the listening list — MySQL crashed or never started. Run: systemctl start mysql',xp:55},
+{id:20,diff:'medium',cat:'security',prob:'🔴 ALERT: Security team reports a spike in failed SSH logins overnight.\nInvestigate how many failed attempts there were and from which IP.\n\nSearch the authentication log.',accepts:['grep','cat','tail'],hints:['Authentication events including failures are logged.','The log file is auth.log in /var/log/.','Try: grep "Failed password" /var/log/auth.log'],win:'Brute force from 192.168.1.100! Block it: ufw deny from 192.168.1.100. Consider installing fail2ban.',xp:55},
+{id:21,diff:'medium',cat:'disk',prob:'🔴 INCIDENT: A developer says /var/log/app.log is enormous and filling the disk.\nYou need to find its exact size without opening it.\n\nList files in /var/log showing their sizes.',accepts:['ls','du'],hints:['ls with the right flags shows file sizes.','Use -l for long format and -h for human-readable.','Try: ls -lh /var/log/app.log or du -sh /var/log/app.log'],win:'File is 8.2GB! Truncate safely without restart: > /var/log/app.log (empties the file). Then fix logging verbosity.',xp:45},
+{id:22,diff:'medium',cat:'permissions',prob:'🔴 INCIDENT: The web app throws "Permission denied" writing to /var/www.\nThe app runs as www-data but the directory is owned by root.\n\nChange ownership of /var/www to www-data.',accepts:['chown','chmod'],hints:['There\'s a difference between permissions (chmod) and ownership (chown).','You need to change who *owns* the directory.','Try: chown www-data:www-data /var/www'],win:'chown -R www-data:www-data /var/www gives the web server full access. Never just chmod 777 everything!',xp:50},
+{id:23,diff:'medium',cat:'find',prob:'🔴 INCIDENT: A config change deployed 2 hours ago broke the site.\nYou don\'t know which file was changed. Find all files in /etc modified in the last 24 hours.',accepts:['find'],hints:['find can filter by how recently a file was modified.','The flag is -mtime (modification time).','Try: find /etc -mtime -1   (-1 = less than 1 day ago)'],win:'nginx.conf was modified 2h ago! Compare it: diff /etc/nginx.conf /tmp/nginx.conf.bak to see what changed.',xp:55},
+{id:24,diff:'medium',cat:'network',prob:'🔴 INCIDENT: Hostnames like "dbserver" can\'t be resolved but IPs work fine.\nThis is a DNS issue. Investigate the DNS configuration on this machine.',accepts:['cat','nslookup'],hints:['DNS failure = DNS config or DNS server issue.','The DNS server config is stored in a file in /etc/.','Try: cat /etc/resolv.conf to see configured nameservers'],win:'resolv.conf has a wrong/unreachable nameserver. Fix: echo "nameserver 8.8.8.8" | tee /etc/resolv.conf',xp:55},
+{id:25,diff:'medium',cat:'process',prob:'🔴 INCIDENT: You need to kill a stuck nginx process but only have its name, not its PID.\n\nFind the PID of the nginx process.',accepts:['ps','pgrep'],hints:['ps aux shows all processes with their PIDs.','You can filter ps output to find a specific process.','Try: ps aux | grep nginx'],win:'Got the PID! Kill: kill -9 1234. Or use pkill nginx to kill by name directly.',xp:50},
+{id:26,diff:'medium',cat:'memory',prob:'🔴 INCIDENT: App crashes every few hours with OOM errors.\nA process is slowly leaking memory.\n\nFind which process is using the most RAM right now.',accepts:['ps','top'],hints:['You need ps output sorted by memory usage.','ps has a flag to sort its output.','Try: ps aux --sort=-%mem | head -10'],win:'MySQL consuming 54% RAM with no limit set! Add innodb_buffer_pool_size to /etc/mysql/my.cnf.',xp:55},
+{id:27,diff:'medium',cat:'log',prob:'🔴 INCIDENT: You want to count exactly how many 500 errors appeared in nginx.log.\nYou need a precise number, not just the lines.\n\nCount the matching lines.',accepts:['grep','wc'],hints:['grep finds lines. Another command counts them.','Pipe the grep output into a counting command.','Try: grep "500" /var/log/nginx.log | wc -l  or: grep -c "500" /var/log/nginx.log'],win:'42 errors total. Knowing the count quantifies incident impact. grep -c is faster; wc -l is more versatile.',xp:50},
+{id:28,diff:'medium',cat:'network',prob:'🔴 INCIDENT: Ping to 8.8.8.8 works but ping to google.com fails.\nThis is a classic DNS-only failure.\n\nTest DNS resolution specifically.',accepts:['nslookup','dig'],hints:['Ping works by IP but not hostname = DNS is broken.','There\'s a command dedicated to DNS lookups.','Try: nslookup google.com'],win:'DNS server is not responding. Fix /etc/resolv.conf or restart the DNS resolver service.',xp:55},
+{id:29,diff:'medium',cat:'disk',prob:'🔴 INCIDENT: Find all files larger than 500MB on the whole system.\nA recent bad deploy may have left huge debug dumps.\n\nSearch by file size.',accepts:['find'],hints:['find supports filtering by file size.','The flag is -size. + means "greater than".','Try: find / -size +500M -type f 2>/dev/null'],win:'Found a 2.1GB core dump in /tmp! Verify safe to delete (check date/owner) then: rm /tmp/core.1234',xp:55},
+{id:30,diff:'medium',cat:'process',prob:'You need to know how long this server has been running without a reboot.\nA server up for 400+ days may have missed critical security patches.\n\nCheck system uptime.',accepts:['uptime'],hints:['There\'s a command literally called uptime.','It also shows load average — crucial info.','Type: uptime'],win:'42 days uptime. Load 0.52 — healthy. Server needs a patch reboot cycle soon. Schedule a maintenance window.',xp:40},
+{id:31,diff:'hard',cat:'memory',prob:'🔴 CRITICAL: App OOM-crashes repeatedly. free shows RAM is somewhat OK.\nBut the kernel itself may be killing processes silently.\n\nCheck if the kernel OOM killer has been active.',accepts:['dmesg','cat','grep'],hints:['The kernel logs its own events, including OOM kills.','Check kern.log or use the dmesg command.','Try: grep -i "out of memory" /var/log/kern.log or: dmesg | grep -i "oom"'],win:'OOM killer terminated nginx! The kernel was silently killing processes. Now you know the true cause. Check for memory leaks in app code.',xp:80},
+{id:32,diff:'hard',cat:'security',prob:'🔴 CRITICAL: A user has unexpectedly gained root-level capabilities.\nAudit who has passwordless sudo privileges on this system.',accepts:['cat','grep','less'],hints:['Sudo rules are configured in a specific file.','The file controls who can run what as root.','Try: cat /etc/sudoers or grep NOPASSWD /etc/sudoers'],win:'Found NOPASSWD for apt-get — user can install packages as root without a password. This is a privilege escalation vector. Restrict it.',xp:80},
+{id:33,diff:'hard',cat:'process',prob:'🔴 CRITICAL: A cron job runs a script every 5 minutes causing CPU spikes.\nYou need to find what\'s scheduled in cron without guessing.\n\nInspect the crontab.',accepts:['cat','crontab'],hints:['Scheduled tasks are managed by cron.','Cron reads a specific configuration file.','Try: cat /etc/crontab or crontab -l'],win:'script.sh runs every 5 mins (*/5 in crontab). It has an inefficient loop. Fix with: crontab -e',xp:80},
+{id:34,diff:'hard',cat:'network',prob:'🔴 CRITICAL: Nginx won\'t start. Error: "bind() to 0.0.0.0:80 failed: Address already in use".\nSomething else is already holding port 80.\n\nFind which process is holding port 80.',accepts:['netstat','ss','lsof'],hints:['Something is bound to port 80 already.','You need a command that shows which process owns that port.','Try: netstat -tlnp | grep :80 or ss -tlnp | grep :80'],win:'Apache2 is on port 80! Stop it: systemctl stop apache2. Then start nginx. Classic conflict after installing multiple web servers.',xp:85},
+{id:35,diff:'hard',cat:'find',prob:'🔴 CRITICAL: Security audit. Find all files on the system with the SUID bit set.\nSUID files run with the owner\'s privileges — dangerous if unexpected ones exist.',accepts:['find'],hints:['find can search by permission bits.','The SUID bit is a special permission.','Try: find / -perm -4000 -type f 2>/dev/null'],win:'SUID files found! Compare against a known-good baseline. Unexpected SUID binaries = sign of compromise.',xp:85},
+{id:36,diff:'hard',cat:'log',prob:'🔴 CRITICAL: Server was slow for exactly 3 minutes between 10:22 and 10:25.\nYou have a 2GB log file. You need ONLY lines from that time window — efficiently.\n\nFilter by time range.',accepts:['grep','awk','sed'],hints:['You need to filter by a timestamp pattern.','grep supports regex — you can match time ranges.','Try: grep "10:2[2-5]" /var/log/app.log'],win:'grep "10:2[2-5]" isolates that exact window! Found 3 DB timeouts at 10:22 — that was the cause. Time-range grep is a real SRE skill.',xp:85},
+{id:37,diff:'hard',cat:'disk',prob:'🔴 CRITICAL: df says disk is 92% full. /var/log and /tmp both look normal.\nThe space is hidden somewhere deeper.\n\nFind the real culprit directory.',accepts:['du','find'],hints:['du can recursively show who uses the most space.','Sort the output to find the biggest directories.','Try: du -sh /* 2>/dev/null | sort -rh | head -20'],win:'Found it — /usr/local/app has 30GB of old release archives. Confirm current version is running, then delete old ones.',xp:85},
+{id:38,diff:'hard',cat:'memory',prob:'🔴 CRITICAL: Memory is critically low but no single process looks guilty.\nSuspect: multiple processes in D-state (stuck on I/O) — these hold memory and cause system stalls.\n\nFind D-state processes.',accepts:['ps','top'],hints:['D-state processes are blocked on disk/IO.','ps shows process state in the STAT column.','Try: ps aux | grep " D " or run top and press f'],win:'12 nginx workers in D-state — the underlying disk is saturated or failing. Check: dmesg | grep -i "sda" for disk errors.',xp:85},
+{id:39,diff:'hard',cat:'security',prob:'🔴 CRITICAL: Someone modified a file in /var/www recently.\nFind which file was changed and when — for the incident report.',accepts:['find','ls','stat'],hints:['You can search for recently modified files.','find supports modification time filtering.','Try: find /var/www -mtime -1 or stat /var/www/index.html'],win:'index.html modified 2h ago by www-data! Check: diff index.html ../backup/index.html to see what was injected.',xp:80},
+{id:40,diff:'hard',cat:'network',prob:'🔴 CRITICAL: Users in one region can\'t reach the server. Others can.\nThis suggests a routing issue, not a service crash.\n\nTrace the network path to find where packets drop.',accepts:['traceroute','mtr'],hints:['Ping might work but a deeper tool shows the full path.','You need to trace each network hop.','Try: traceroute 192.168.1.20'],win:'Packets time out at hop 3 — a firewall is blocking the path. Escalate to the network team with this traceroute output.',xp:85},
+{id:41,diff:'hard',cat:'log',prob:'🔴 CRITICAL: You need cron-specific error messages from syslog, which mixes everything together.\n\nSearch syslog for cron-related failures only.',accepts:['grep'],hints:['syslog mixes all system messages together.','You can grep for two things at once using regex.','Try: grep -i "cron" /var/log/syslog | grep -i "error\\|fail"'],win:'grep -E is Extended Regex — matches multiple patterns. This is essential for log analysis in production.',xp:80},
+{id:42,diff:'hard',cat:'permissions',prob:'🔴 CRITICAL: An SSH key at /home/user/.ssh needs permissions 600 (owner read/write only).\nSSH will REFUSE to use keys with loose permissions as a security measure.\n\nSet the correct permissions.',accepts:['chmod'],hints:['SSH is strict: private keys must be readable only by their owner.','Numeric permission 600 = rw------- (owner only).','Try: chmod 600 /home/user/.ssh/id_rsa'],win:'chmod 600 sets rw-------. SSH now accepts the key. Real error you\'ll hit: "Permissions 0644 for key are too open."',xp:80},
+{id:43,diff:'expert',cat:'security',prob:'🚨 BREACH: Attacker accessed the server via SSH and ran sudo bash to get root.\nReconstruct the exact attack timeline from auth logs.\n\nFind: when they logged in, from where, and when they escalated to root.',accepts:['cat','grep','tail','less'],hints:['The full attack is recorded in auth.log.','Look for "Accepted", "sudo", and "COMMAND" entries.','Try: grep -E "Accepted|sudo|COMMAND" /var/log/auth.log'],win:'Timeline: 09:01 SSH from 10.0.0.5 → 09:05 sudo bash (root). Actions: change credentials, revoke SSH key, run: last -n 20',xp:120},
+{id:44,diff:'expert',cat:'performance',prob:'🚨 CASCADING FAILURE: App, DB, and nginx all down simultaneously.\nYou have 5 minutes before SLA breach. You can only run ONE command first.\n\nWhat gives you the broadest system health overview?',accepts:['top','uptime','free','ps','dmesg'],hints:['You need the widest possible picture in one command.','Don\'t guess at the cause yet — observe first.','top or uptime shows load average, memory, and process states.'],win:'Triage first! Load 45.2 on 4-core server = system thrashing. RAM exhausted. OOM cascade. Kill heaviest processes to stabilize.',xp:120},
+{id:45,diff:'expert',cat:'network',prob:'🚨 INTERMITTENT: Random 504 Gateway Timeouts but nginx and backend both appear running.\nPing and curl between services work fine. But under load, requests hang.\n\nWhat do you investigate to find the connection pool bottleneck?',accepts:['netstat','ss'],hints:['Both services are up but requests still fail under load.','The issue is likely connection state — not whether ports are open.','Try: netstat -an | grep CLOSE_WAIT or ss -s'],win:'CLOSE_WAIT connections piling up — the app isn\'t closing connections after responses. Connection leak. Check app timeout config.',xp:120},
+{id:46,diff:'expert',cat:'disk',prob:'🚨 IMPOSSIBLE DISK: df shows root at 100%. But du -sh /* only accounts for 60%.\nFiles deleted by one process but still held open by another don\'t free space until closed.\n\nFind which process is holding deleted files open.',accepts:['lsof'],hints:['Deleted files held open are invisible to du but not to this tool.','It shows all open files — even deleted ones.','Try: lsof | grep deleted'],win:'nginx holds a 40GB deleted log file open! Fix: kill -USR1 $(cat /var/run/nginx.pid) to reopen logs. Space freed instantly.',xp:130},
+{id:47,diff:'expert',cat:'security',prob:'🚨 BACKDOOR: Attacker may have planted persistence via cron.\nFind ALL cron files across the system modified in the last 48 hours.\n\nCron lives in multiple places: /etc/cron*, /var/spool/cron/, /etc/crontab',accepts:['find'],hints:['Cron jobs are stored in multiple directories.','find can search multiple paths and filter by time.','Try: find /etc/cron* /var/spool/cron -mtime -2 2>/dev/null'],win:'Unauthorized entry in /etc/crontab modified 2h ago — a reverse shell callback was added. Remove it, then: who, last, ps aux',xp:130},
+{id:48,diff:'expert',cat:'log',prob:'🚨 CLOCK DRIFT: SSL certificates are being rejected with "certificate not yet valid".\nBut certs are valid — clocks between servers are out of sync.\n\nCheck NTP sync status and find the time offset.',accepts:['timedatectl','ntpq','date'],hints:['Clock drift causes SSL handshake failures when clocks disagree by seconds.','Modern Linux uses timedatectl to check sync status.','Try: timedatectl'],win:'NTP inactive — 47 second drift! Fix: timedatectl set-ntp true && systemctl restart systemd-timesyncd',xp:130},
+{id:49,diff:'expert',cat:'performance',prob:'🚨 KERNEL PANIC INCOMING: Load average is 45 on a 4-core server. D-state processes everywhere.\nSystem is about to become unresponsive. Suspect disk I/O saturation.\n\nCheck kernel messages for disk-level errors right now.',accepts:['dmesg','cat','grep'],hints:['Kernel hardware errors appear in a specific ring buffer.','D-state processes waiting on I/O = likely disk issue.','Try: dmesg | tail -30 or dmesg | grep -i "error\\|sda"'],win:'EXT4 filesystem errors and I/O failures on sda1! Emergency: save data, remount read-only, replace disk. Hardware incident.',xp:130},
+{id:50,diff:'expert',cat:'security',prob:'🚨 PRIVILEGE ESCALATION: Suspect an attacker installed a SUID binary to maintain root access.\nA SUID file runs as its owner (often root) regardless of who executes it.\n\nFind all root-owned SUID files to identify any that don\'t belong.',accepts:['find'],hints:['SUID is a special permission bit.','find can search by exact permission bits and owner.','Try: find / -user root -perm -4000 -type f 2>/dev/null'],win:'Suspicious SUID binary outside standard paths! Compare: dpkg --verify (Debian) or rpm -Va (RHEL) against package manifests.',xp:130},
+];
+
+const HINT_COST={easy:5,medium:10,hard:15,expert:20};
+const DIFF_COLOR={easy:'var(--easy)',medium:'var(--medium)',hard:'var(--orange)',expert:'var(--red)'};
+const WRONG_GENERIC=[
+  "Not quite — that command won't address this specific problem. Think: what *type* of issue is this — disk? memory? process? network? log?",
+  "Good try, but that's not the right tool here. Break it down: what is the observable symptom, and what category of command investigates it?",
+  "That command exists, but it doesn't help in this scenario. Ask yourself: what resource or log would reveal the problem described?",
+  "Almost instinctive, but wrong category. In real incidents, picking the right diagnostic tool first saves critical minutes.",
+  "Hmm — that wouldn't tell you what you need here. Which Linux subsystem is being described: filesystem, memory, CPU, network, or security?",
+  "Close in spirit but wrong direction. Pros follow: observe → isolate → diagnose. What's the correct isolate step here?",
+  "That command does something else entirely. Re-read the scenario carefully — what is the symptom, and what tool specifically investigates that?",
+];
+const WRONG_CAT={
+  disk:"📂 Category: DISK — try: df (partition usage), du (directory breakdown), ls -lhS (file sizes by size)",
+  memory:"🧠 Category: MEMORY — try: free (RAM overview), ps aux --sort=-%mem (biggest consumers), top (live view)",
+  process:"⚙️ Category: PROCESS — try: ps aux (list all), top (live CPU/mem), kill -9 PID (terminate)",
+  network:"🌐 Category: NETWORK — try: ping (reachable?), nslookup (DNS?), traceroute (path?), netstat/ss (ports?)",
+  security:"🔒 Category: SECURITY — try: grep on auth.log (logins), cat /etc/sudoers (privileges), find -mtime (modified files)",
+  log:"📋 Category: LOG ANALYSIS — try: cat (full file), tail -f (live), grep PATTERN (filter), grep -c (count), wc -l",
+  find:"🔍 Category: FILE SEARCH — try: find (by name/size/time), ls -la (check times), stat (detailed metadata)",
+  permissions:"🔑 Category: PERMISSIONS — try: ls -la (see perms), chmod (change mode), chown (change owner)",
+  performance:"🚀 Category: PERFORMANCE — try: top (live), uptime (load average), ps aux (all processes), free (memory)",
+  navigation:"🗺️ Category: NAVIGATION — try: pwd (where am I?), ls (what's here?), cd (move around), find (search)",
+};
+let wrongCount=0;
+
+// ══════════════════════════════════════════════════════════════════
+// OUTPUT / UI
+// ══════════════════════════════════════════════════════════════════
+const T=document.getElementById('terminal');
+const ci=document.getElementById('ci');
+const pgf=document.getElementById('pgfill');
+const hbtn=document.getElementById('hbtn');
+
+function pr(text,cls='out'){
+  if(Array.isArray(text)){text.forEach(t=>pr(t,cls));return;}
+  const d=document.createElement('div');d.className='ln '+cls;
+  d.innerHTML=String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/&lt;b&gt;/g,'<b>').replace(/&lt;\/b&gt;/g,'</b>');
+  T.appendChild(d);T.scrollTop=T.scrollHeight;
+}
+function blank(){pr('')}
+function hr(){const d=document.createElement('hr');d.className='divider';T.appendChild(d);T.scrollTop=T.scrollHeight;}
+
+function doBurst(text,color,sub){
+  const el=document.getElementById('burst');
+  el.innerHTML=text+(sub?'<br><span style="font-size:11px;opacity:.8">'+sub+'</span>':'');
+  el.style.color=color;
+  el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');
+}
+function shakeInput(){ci.classList.remove('shake');void ci.offsetWidth;ci.classList.add('shake');}
+
+function updateHUD(){
+  const scenes=getFiltered();
+  const total=S.mode==='learn'?LEARN.length:scenes.length;
+  pgf.style.width=total>0?Math.round((Math.min(S.level,total)/total)*100)+'%':'0%';
+  document.getElementById('h-mode').textContent=S.mode==='learn'?'LEARN':'GAME·'+S.diffFilter.toUpperCase();
+  document.getElementById('h-xp').textContent='⭐ '+S.xp;
+  document.getElementById('h-streak').textContent='🔥 '+S.streak;
+  document.getElementById('user-pill-name').textContent=currentProfile||'—';
+  const rank=getRank(S.xp);
+  document.getElementById('user-pill-avatar').textContent=rank.icon;
+}
+function updatePrompt(){
+  const short=S.path==='/'?'~':S.path.split('/').pop();
+  document.getElementById('prompt').textContent=short+'$ ';
+}
+function showHint(show){hbtn.style.display=show?'inline-block':'none';}
+
+// ── SHEET ─────────────────────────────────────────────────────
+function openSheet(title,diff,body,task){
+  document.getElementById('sheet-title').textContent=title;
+  const bd=document.getElementById('sheet-badge');
+  bd.innerHTML=diff?'<span class="sbadge" style="background:'+DIFF_COLOR[diff]+'20;color:'+DIFF_COLOR[diff]+'">'+diff.toUpperCase()+'</span>':'';
+  document.getElementById('sheet-body').textContent=body;
+  document.getElementById('sheet-task').textContent='✏️  '+task;
+  document.getElementById('sheet-why').style.display='none';
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet(){document.getElementById('sheet').classList.remove('open');ci.focus();}
+
+// ── DIFF FILTER ───────────────────────────────────────────────
+function getFiltered(){
+  return S.diffFilter==='all'?ALL_SCENARIOS:ALL_SCENARIOS.filter(s=>s.diff===S.diffFilter);
+}
+function setDiff(d){
+  S.diffFilter=d;S.level=0;syncToProfile();
+  document.querySelectorAll('.dbtn').forEach(b=>b.classList.toggle('active',b.dataset.d===d));
+  updateHUD();blank();
+  pr('🎯 Difficulty: '+d.toUpperCase()+' — '+getFiltered().length+' scenarios loaded.','info');
+  startGame();
+}
+
+// ── HINT ──────────────────────────────────────────────────────
+let hintIdx=0;
+function useHint(){
+  if(S.mode!=='game')return;
+  const sc=getFiltered()[S.level];if(!sc)return;
+  const cost=HINT_COST[sc.diff];
+  const h=sc.hints[Math.min(hintIdx,sc.hints.length-1)];
+  hintIdx++;
+  S.xp=Math.max(0,S.xp-cost);S.hintsUsed++;S.hintXpLost+=cost;
+  P.xp=S.xp;P.hintsUsed=S.hintsUsed;P.hintXpLost=S.hintXpLost;
+  syncToProfile();updateHUD();
+  blank();
+  pr('💡 HINT ('+hintIdx+'/'+sc.hints.length+') — -'+cost+' XP penalty','warn');
+  pr(h,'hint');
+  doBurst('-'+cost+' XP',DIFF_COLOR[sc.diff],'hint penalty');
+  if(hintIdx>=sc.hints.length){pr('⚠️  All hints revealed for this scenario.','warn');showHint(false);}
+}
+
+// ── LEARN ────────────────────────────────────────────────────
+let learnTries=0;
+function startLearn(){
+  showHint(false);
+  document.getElementById('diffbar').classList.add('hidden');
+  if(S.level>=LEARN.length){
+    blank();pr('🎓 ALL '+LEARN.length+' LESSONS COMPLETE!','ok');
+    pr('You have mastered Linux fundamentals.','lesson');
+    pr('Total XP: '+S.xp+' ⭐','warn');
+    pr('Type game to test your skills in real-world scenarios!','info');
+    doBurst('🎓 Graduate!','#3fb950');return;
+  }
+  const lv=LEARN[S.level];blank();
+  pr('📖 LESSON '+(S.level+1)+' / '+LEARN.length,'info');
+  pr(lv.title,'info');hr();
+  openSheet(lv.title,'',lv.body,lv.task);
+  learnTries=0;
+}
+function checkLearn(cmd){
+  const lv=LEARN[S.level];if(!lv)return false;
+  if(lv.check(cmd)){
+    const out=lv.out();
+    Array.isArray(out)?out.forEach(l=>pr(l)):pr(out);
+    blank();pr('✅  Correct!','ok');pr('📘 Why: '+lv.why,'tip');
+    S.xp+=30;S.streak++;if(S.streak>S.bestStreak)S.bestStreak=S.streak;
+    S.progress.learnDone.push(S.level);S.level++;
+    P.sessionXp=(P.sessionXp||0)+30;
+    syncToProfile();updateHUD();
+    doBurst('+30 XP','#3fb950','lesson complete');
+    setTimeout(startLearn,1600);return true;
+  }
+  learnTries++;shakeInput();
+  if(learnTries===1)pr('🤔 Not quite. Re-open the lesson sheet (tap the lesson title above) to recheck.','hint');
+  else if(learnTries===2)pr('💡 Re-read the task — the command name is mentioned directly.','hint');
+  else pr('📋 Reminder: '+lv.task,'hint');
+  return true;
+}
+
+// ── GAME ─────────────────────────────────────────────────────
+function startGame(){
+  document.getElementById('diffbar').classList.remove('hidden');
+  const scenes=getFiltered();
+  if(S.level>=scenes.length){
+    blank();pr('🏆 ALL '+scenes.length+' SCENARIOS CLEARED! ['+S.diffFilter.toUpperCase()+']','ok');
+    pr('Total XP: '+S.xp+' | Best streak: '+S.bestStreak,'warn');
+    pr('Hints used: '+S.hintsUsed+' (-'+S.hintXpLost+' XP total)','hint');
+    pr('Try a harder difficulty or type restart to replay.','info');
+    showHint(false);return;
+  }
+  const sc=scenes[S.level];blank();
+  pr('🎮 SCENARIO '+(S.level+1)+' / '+scenes.length+' | <span class="d-'+sc.diff+'">'+sc.diff.toUpperCase()+'</span> | '+sc.cat.toUpperCase(),'info');
+  hr();
+  sc.prob.split('\n').forEach((l,i)=>pr(l,i===0?'warn':'out'));
+  blank();pr('What command do you run?  [ 💡 Hint = -'+HINT_COST[sc.diff]+' XP ]','sys');
+  wrongCount=0;hintIdx=0;showHint(true);
+}
+function checkGame(cmd){
+  const scenes=getFiltered();
+  const sc=scenes[S.level];if(!sc)return false;
+  const tok=cmd.split(' ')[0].toLowerCase();
+  if(sc.accepts.some(a=>tok.includes(a)||cmd.toLowerCase().includes(a))){
+    blank();pr('✅  SOLVED: '+sc.win,'ok');
+    pr('💰 +'+sc.xp+' XP | Streak: '+(S.streak+1),'warn');
+    S.xp+=sc.xp;S.streak++;if(S.streak>S.bestStreak)S.bestStreak=S.streak;
+    S.progress.gameDone.push(sc.id);S.level++;
+    P.sessionXp=(P.sessionXp||0)+sc.xp;
+    P.sessionSolved=(P.sessionSolved||0)+1;
+    syncToProfile();updateHUD();
+    doBurst('+'+sc.xp+' XP',DIFF_COLOR[sc.diff],sc.diff.toUpperCase()+' solved!');
+    showHint(false);setTimeout(startGame,2200);return true;
+  }
+  wrongCount++;S.wrongAttempts++;shakeInput();
+  blank();
+  const gIdx=Math.floor(Math.random()*WRONG_GENERIC.length);
+  pr('✗  '+WRONG_GENERIC[gIdx],'err');
+  if(wrongCount>=2&&WRONG_CAT[sc.cat]){
+    blank();pr('📂 '+WRONG_CAT[sc.cat],'hint');
+  }
+  return true;
+}
+
+// ── SIMULATOR ────────────────────────────────────────────────
+const ALL_CMDS=['ls','cd','pwd','cat','less','head','tail','grep','find','df','du','free','uptime','ps','top','htop','ping','curl','netstat','ss','nslookup','traceroute','chmod','chown','touch','rm','cp','mv','mkdir','who','whoami','date','wc','stat','lsof','dmesg','timedatectl','crontab','man','history','clear','help','learn','game','exit','restart'];
+const MAN={ls:'ls [opt] [path]\n  -l  long format\n  -a  show hidden\n  -h  human sizes\n  -S  sort by size\n  -t  sort by time\nExample: ls -lha /var/log',cd:'cd [dir]\n  cd ..  up one level\n  cd ~   home dir\n  cd /   root\n  cd -   previous dir',grep:'grep [flags] PATTERN FILE\n  -i  case insensitive\n  -r  recursive\n  -n  line numbers\n  -c  count matches\n  -v  invert match\n  -E  extended regex\nExample: grep -rn "error" /var/log/',find:'find [path] [criteria]\n  -name "*.log"\n  -type f (files only)\n  -mtime -1 (last 24h)\n  -size +100M\n  -perm -4000 (SUID)\nExample: find / -size +100M 2>/dev/null',chmod:'chmod [mode] file\n  755 = rwxr-xr-x\n  644 = rw-r--r--\n  600 = rw------- (keys)\n  +x  add execute\nExample: chmod 600 ~/.ssh/id_rsa',df:'df [flags]\n  -h  human readable\n  -T  filesystem type\nUse%: >90% = critical',top:'top — live process monitor\n  q  quit\n  k  kill by PID\n  M  sort by memory\n  P  sort by CPU\n  1  per-CPU stats',ps:'ps [flags]\n  aux  all processes\n  --sort=-%mem  by memory\n  --sort=-%cpu  by CPU\nExample: ps aux | grep nginx',free:'free [flags]\n  -h  human readable\n"available" = what new programs can use',netstat:'netstat [flags]\n  -t  TCP only\n  -l  listening\n  -n  numeric\n  -p  show PID\nExample: netstat -tlnp',du:'du [flags] [path]\n  -s  summary only\n  -h  human readable\nExample: du -sh /var/* | sort -rh',tail:'tail [flags] [file]\n  -n 20  last 20 lines\n  -f     follow live\nExample: tail -f /var/log/app.log'};
+
+function resolvePath(arg){
+  if(!arg)return S.path;
+  if(arg==='~')return'/home/user';
+  if(arg.startsWith('/'))return arg;
+  return(S.path==='/'?'':S.path)+'/'+arg;
+}
+function simulate(cmd,base,args){
+  const a0=args[0]||'',a1=args[1]||'';
+  if(base==='pwd'){pr(S.path);return;}
+  if(base==='whoami'){pr('user');return;}
+  if(base==='who'){pr('user  pts/0  2026-05-01 09:00 (192.168.1.50)\nroot  pts/1  2026-05-01 08:30 (localhost)');return;}
+  if(base==='date'){pr(new Date().toString());return;}
+  if(base==='uptime'){pr(' up 42 days, 3:15,  2 users,  load: 0.52, 0.48, 0.44');return;}
+  if(base==='timedatectl'){pr('               Local time: '+new Date().toUTCString()+'\nSystem clock synchronized: no\n              NTP service: inactive','warn');return;}
+  if(base==='dmesg'){pr('[  0.0] Linux version 5.15.0\n[  1.2] EXT4-fs mounted\n[423.1] Out of memory: Kill process 1234 (nginx)\n[423.2] oom_kill_process: oom_score_adj=0\n[500.0] EXT4-fs error (device sda1): I/O failure','warn');return;}
+  if(base==='lsof'){pr('COMMAND  PID  USER  TYPE  SIZE/OFF  NAME\nnginx   1234  www   REG   41.3G  /var/log/nginx.log (deleted)\nmysql   1456  mysql REG    2.1G  /var/lib/mysql/ibdata1','warn');return;}
+  if(base==='stat'){pr('File: '+(a0||'.')+'\nSize: 4096\nAccess: -rw-r--r--\nUid: 1000 (user)\nModify: 2026-05-01 10:22:00');return;}
+  if(base==='ls'){
+    const p=a0?resolvePath(a0):S.path;
+    const items=S.fs[p];
+    if(!items){pr('ls: '+p+': No such file or directory','err');return;}
+    if(cmd.includes('-l')){items.forEach(i=>pr((S.fs[(p==='/'?'':p)+'/'+i]?'drwxr-xr-x':'−rw-r--r--')+' user May 1  '+(S.fs[(p==='/'?'':p)+'/'+i]?'📁 ':'📄 ')+i));}
+    else pr(items.map(i=>S.fs[(p==='/'?'':p)+'/'+i]?'📁 '+i:'📄 '+i).join('  '));return;
+  }
+  if(base==='cd'){
+    if(!a0||a0==='~'){S.path='/home/user';updatePrompt();return;}
+    if(a0==='..'){const p=S.path.split('/');p.pop();S.path=p.join('/')||'/';updatePrompt();return;}
+    if(a0==='/'){S.path='/';updatePrompt();return;}
+    const np=resolvePath(a0);
+    if(S.fs[np]){S.path=np;updatePrompt();}else pr('cd: '+a0+': No such file or directory','err');return;
+  }
+  if(base==='cat'){if(!a0){pr('cat: missing file operand','err');return;}const c=S.fc[resolvePath(a0)];c?pr(c):pr('cat: '+a0+': No such file or directory','err');return;}
+  if(base==='head'){const c=S.fc[resolvePath(a0)];c?pr(c.split('\n').slice(0,5).join('\n')):pr('head: '+a0+': not found','err');return;}
+  if(base==='tail'||base==='less'){const c=S.fc[resolvePath(a0)];c?pr(c.split('\n').slice(-5).join('\n')):pr(base+': '+a0+': not found','err');return;}
+  if(base==='grep'){
+    if(args.length<2){pr('Usage: grep PATTERN FILE','err');return;}
+    const pat=args[0],file=args[args.length-1];
+    const c=S.fc[resolvePath(file)];
+    if(!c){pr('grep: '+file+': No such file or directory','err');return;}
+    const ci2=cmd.includes('-i');
+    const m=c.split('\n').filter(l=>ci2?l.toLowerCase().includes(pat.toLowerCase()):l.includes(pat));
+    if(cmd.includes('-c')){pr(String(m.length));return;}
+    m.length?m.forEach(l=>pr(l)):pr('(no matches)','sys');return;
+  }
+  if(base==='find'){
+    const root=a0?resolvePath(a0):S.path;
+    const ni=args.findIndex(a=>a==='-name');
+    const pat=ni>=0?args[ni+1]:'';
+    const all=Object.keys(S.fs).filter(k=>k.startsWith(root==='.'?S.path:root)).flatMap(d=>S.fs[d].map(f=>(d==='/'?'':d)+'/'+f));
+    const out=pat?all.filter(f=>f.includes(pat.replace(/\*/g,''))):all;
+    out.length?out.forEach(f=>pr(f)):pr('(no results)','sys');return;
+  }
+  if(base==='df'){pr('Filesystem  Size  Used Avail Use%\n/dev/sda1    50G   43G  4.2G  92% /\ntmpfs        2.0G    0   2.0G   0% /dev/shm\n/dev/sdb1   100G   12G  88G   12% /data');return;}
+  if(base==='du'){pr('4.0K  ./notes.txt\n8.0K  ./script.sh\n128M  /var/log\n2.1G  /var/www\n30G   /usr/local/app');return;}
+  if(base==='free'){pr('            total  used  free  available\nMem:          7.7G  7.5G   51M       68M\nSwap:         2.0G  1.9G  100M','warn');return;}
+  if(base==='top'||base==='htop'){pr('top − '+new Date().toLocaleTimeString()+' | load: 45.2 HIGH\nPID   USER     %CPU %MEM STAT CMD\n1234  www-data 98.2 12.4 D    nginx\n1456  mysql     2.1 54.9 S    mysqld\n2001  user      0.5  1.2 S    bash','warn');return;}
+  if(base==='ps'){pr('USER      PID  %CPU %MEM STAT COMMAND\nroot        1   0.0  0.1 S    /sbin/init\nwww-data 1234  98.2 12.4 D    nginx\nmysql    1456   2.1 54.9 S    mysqld\nuser     2001   0.5  1.2 S    bash');return;}
+  if(base==='ping'){pr('PING '+(a0||'localhost')+'\n64 bytes: icmp_seq=0 time=12.3ms\n64 bytes: icmp_seq=1 time=11.8ms\n2 packets, 0% packet loss ✅');return;}
+  if(base==='curl'){pr('HTTP/1.1 200 OK\nContent-Type: text/html\nConnection successful ✅');return;}
+  if(base==='netstat'||base==='ss'){pr('Proto Local Addr     State    PID/Program\ntcp   0.0.0.0:80    LISTEN   1234/nginx\ntcp   0.0.0.0:443   LISTEN   1234/nginx\ntcp   0.0.0.0:3306  LISTEN   1456/mysqld\ntcp   127.0.0.1:22  LISTEN    890/sshd');return;}
+  if(base==='nslookup'){pr('Server: 8.8.8.8\nName: '+(a0||'localhost')+'\nAddress: 93.184.216.34');return;}
+  if(base==='traceroute'){pr('1  192.168.1.1   1.2ms\n2  10.0.0.1      5.4ms\n3  * * *        (TIMEOUT)\n4  '+(a0||'google.com')+' 12.3ms','warn');return;}
+  if(base==='chmod'){pr('chmod: permissions updated for '+(a1||a0),'ok');return;}
+  if(base==='chown'){pr('chown: ownership updated for '+(a1||a0),'ok');return;}
+  if(base==='touch'){if(!a0){pr('touch: missing operand','err');return;}const p=resolvePath(a0);S.fc[p]='';if(!S.fs[S.path])S.fs[S.path]=[];if(!S.fs[S.path].includes(a0))S.fs[S.path].push(a0);pr('📄 '+a0+' created','ok');return;}
+  if(base==='mkdir'){if(!a0){pr('mkdir: missing operand','err');return;}const p=resolvePath(a0);S.fs[p]=[];if(!S.fs[S.path])S.fs[S.path]=[];if(!S.fs[S.path].includes(a0))S.fs[S.path].push(a0);pr('📁 '+a0+' created','ok');return;}
+  if(base==='rm'){pr("removed '"+a0+"'",'out');return;}
+  if(base==='cp'){pr("copied '"+a0+"' → '"+a1+"'",'out');return;}
+  if(base==='mv'){pr("moved '"+a0+"' → '"+a1+"'",'out');return;}
+  if(base==='wc'){const c=S.fc[resolvePath(a0)];if(c){const ln=c.split('\n').length,wd=c.split(/\s+/).filter(Boolean).length;pr(ln+' '+wd+' '+c.length+' '+(a0||'stdin'));}else pr('0 0 0 '+(a0||''));return;}
+  if(base==='man'){MAN[a0]?(pr('MAN: '+a0,'info'),pr(MAN[a0])):pr('No manual entry for '+a0,'err');return;}
+  if(base==='history'){S.history.slice(-20).forEach((h,i)=>pr('  '+(i+1)+'  '+h));return;}
+  if(base==='crontab'){pr(S.fc['/etc/crontab']||'no crontab for user');return;}
+  pr('bash: '+base+': command not found','err');
+  pr('💡 Type help to browse all commands','sys');
+}
+
+// ── HELP / REFERENCE / TABS ──────────────────────────────────
+const GROUPS={'📂 Navigation':['ls','cd','pwd'],'📄 File Ops':['touch','rm','cp','mv','mkdir'],'👁️  Read Files':['cat','less','head','tail'],'🔍 Search':['grep','find'],'💻 System':['df','du','free','uptime','ps','top','htop','dmesg','lsof'],'🌐 Network':['ping','curl','netstat','ss','nslookup','traceroute'],'🔒 Permissions':['chmod','chown'],'🛠️  Utility':['who','whoami','date','wc','stat','man','history','clear','timedatectl','crontab'],'🎮 App':['learn','game','restart','exit','help']};
+function showHelp(){
+  blank();pr('📚 COMMAND LIST — tap any to insert','info');hr();
+  Object.entries(GROUPS).forEach(([g,cmds])=>{
+    pr(g,'warn');
+    cmds.forEach(c=>{
+      const d=document.createElement('div');d.className='ln cmd-link';
+      d.textContent='  '+c+(MAN[c]?' →':'');
+      d.onclick=()=>{ci.value=c+' ';ci.focus();switchTab('terminal');};T.appendChild(d);
+    });
+  });T.scrollTop=T.scrollHeight;
+}
+function showRef(){
+  blank();pr('📖 LINUX QUICK REFERENCE','info');hr();
+  [['Filesystem Layout','/         root of everything\n/home     user home directories\n/etc      config files\n/var/log  log files\n/tmp      temporary files\n/proc     running process info'],
+   ['Permission Notation','-rwxr-xr--\n r=read(4) w=write(2) x=execute(1)\n Owner|Group|Others\n\n chmod 755 = rwxr-xr-x  (scripts)\n chmod 644 = rw-r--r--   (files)\n chmod 600 = rw-------   (SSH keys)'],
+   ['Pipes & Redirection','cmd1 | cmd2      pipe output to next\ncmd > file       write output to file\ncmd >> file      append to file\ncmd 2>/dev/null  suppress errors\ngrep err log | wc -l  count errors'],
+   ['Process Signals','kill -9  PID    force kill (SIGKILL)\nkill -15 PID    graceful stop (SIGTERM)\nkill -1  PID    reload config (SIGHUP)\npkill nginx     kill by name'],
+   ['Cron Format','* * * * *  command\n│ │ │ │ └─ day of week (0-7)\n│ │ │ └─── month (1-12)\n│ │ └───── day (1-31)\n│ └─────── hour (0-23)\n└───────── minute (0-59)\n*/5 = every 5 minutes'],
+   ['Incident Checklist','1. df -h              disk full?\n2. free -h            memory OK?\n3. uptime             load average?\n4. top / ps aux       CPU/mem hog?\n5. netstat -tlnp      ports open?\n6. tail -f /var/log/  errors?\n7. ping / nslookup    network OK?'],
+  ].forEach(([title,content])=>{pr(title,'info');pr(content,'lesson');blank();});
+}
+function showScores(){
+  blank();pr('🏆 SCORES & XP TABLE','info');hr();
+  pr('Profile: '+currentProfile+' | XP: '+S.xp+' ⭐','warn');
+  const rank=getRank(S.xp);
+  const next=getNextRank(S.xp);
+  pr(rank.icon+' Rank: '+rank.title+(next?' | '+( next.min-S.xp)+' XP to '+next.title:' (MAX RANK)'),'tip');
+  pr('Best streak: '+S.bestStreak+' | Hints used: '+S.hintsUsed+' (-'+S.hintXpLost+' XP)','hint');
+  blank();pr('💰 XP per difficulty:','info');
+  [{d:'easy',x:'20–25',c:5},{d:'medium',x:'40–55',c:10},{d:'hard',x:'80–85',c:15},{d:'expert',x:'120–130',c:20}].forEach(r=>{
+    pr('<span class="d-'+r.d+'">'+r.d.toUpperCase()+'</span>  +'+r.x+' XP per solve  |  hint: -'+r.c+' XP each','out');
+  });
+  blank();pr('🎖️  XP RANKS:','info');
+  RANKS.forEach(rk=>{pr((S.xp>=rk.min?'✅ ':'   ')+rk.icon+' '+rk.title+' ('+rk.min+'+ XP) — '+rk.sub,'out');});
+  blank();pr('Tap your avatar (top right) to see session history.','sys');
+}
+function showProgress(){
+  blank();pr('📊 PROGRESS — '+currentProfile,'info');hr();
+  pr('XP: '+S.xp+' ⭐  |  Streak: '+S.streak+' / Best: '+S.bestStreak+' 🔥','warn');
+  pr('Wrong attempts: '+S.wrongAttempts+'  |  Hints: '+S.hintsUsed+' (-'+S.hintXpLost+' XP)','hint');
+  blank();
+  pr('📖 Learn: '+S.progress.learnDone.length+'/'+LEARN.length+' lessons','out');
+  S.progress.learnDone.forEach(i=>LEARN[i]&&pr('  ✅ '+LEARN[i].title,'ok'));
+  blank();
+  const bd={easy:0,medium:0,hard:0,expert:0};
+  S.progress.gameDone.forEach(id=>{const sc=ALL_SCENARIOS.find(s=>s.id===id);if(sc)bd[sc.diff]++;});
+  pr('🎮 Scenarios: '+S.progress.gameDone.length+'/'+ALL_SCENARIOS.length,'out');
+  Object.entries(bd).forEach(([d,n])=>{
+    const total=ALL_SCENARIOS.filter(s=>s.diff===d).length;
+    const f=Math.round(n/total*10);
+    pr('<span class="d-'+d+'">'+d.toUpperCase()+'</span> ['+'█'.repeat(f)+'░'.repeat(10-f)+'] '+n+'/'+total,'out');
+  });
+  blank();pr('Tap your avatar to see per-session history.','sys');
+}
+function switchTab(t){
+  ['terminal','ref','help','scores','progress'].forEach(n=>document.getElementById('tab-'+n).classList.toggle('active',n===t));
+  T.innerHTML='';
+  if(t==='help')showHelp();
+  else if(t==='ref')showRef();
+  else if(t==='scores')showScores();
+  else if(t==='progress')showProgress();
+}
+
+// ── MAIN HANDLER ──────────────────────────────────────────────
+function handleCmd(raw){
+  if(!raw.trim())return;
+  S.history.push(raw);if(S.history.length>100)S.history.shift();syncToProfile();
+  pr('$ '+raw,'in');
+  const cmd=raw.trim(),parts=cmd.split(/\s+/),base=parts[0].toLowerCase(),args=parts.slice(1);
+  if(base==='clear'){T.innerHTML='';return;}
+  if(base==='help'){switchTab('help');return;}
+  if(base==='learn'){S.mode='learn';S.level=0;S.streak=0;syncToProfile();updateHUD();blank();pr('📖 LEARN MODE','info');startLearn();return;}
+  if(base==='game'){S.mode='game';S.level=0;syncToProfile();updateHUD();blank();pr('🎮 GAME MODE — use the difficulty filter above!','info');startGame();return;}
+  if(base==='restart'){S.level=0;S.streak=0;syncToProfile();updateHUD();blank();pr('🔄 Restarting...','sys');S.mode==='learn'?startLearn():startGame();return;}
+  if(base==='exit'){S.mode='learn';S.level=0;syncToProfile();updateHUD();startLearn();return;}
+  if(S.mode==='learn'){if(checkLearn(cmd))return;}
+  else if(S.mode==='game'){if(checkGame(cmd))return;}
+  simulate(cmd,base,args);
+}
+function submitCmd(){const v=ci.value.trim();if(!v)return;handleCmd(v);ci.value='';S.histIdx=-1;}
+function fill(c){ci.value=c;ci.focus();}
+function ins(c){ci.value+=c;ci.focus();}
+function histUp(){if(S.histIdx<S.history.length-1){S.histIdx++;ci.value=S.history[S.history.length-1-S.histIdx]||'';}}
+function histDown(){if(S.histIdx>0){S.histIdx--;ci.value=S.history[S.history.length-1-S.histIdx]||'';}else{S.histIdx=-1;ci.value='';}}
+function tabComplete(){const v=ci.value;const m=ALL_CMDS.filter(c=>c.startsWith(v));if(m.length===1){ci.value=m[0]+' ';}else if(m.length>1){pr(m.join('  '),'sys');}}
+ci.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();submitCmd();}
+  if(e.key==='ArrowUp'){e.preventDefault();histUp();}
+  if(e.key==='ArrowDown'){e.preventDefault();histDown();}
+});
+window.addEventListener('beforeunload',()=>endSession());
+
+// ── BOOT ──────────────────────────────────────────────────────
+function bootApp(){
+  S=buildState();
+  document.querySelectorAll('.dbtn').forEach(b=>b.classList.toggle('active',b.dataset.d===S.diffFilter));
+  updateHUD();updatePrompt();
+  T.innerHTML='';
+  const rank=getRank(S.xp);
+  pr('┌──────────────────────────────┐','info');
+  pr('│  🐧  LinuxSim  v3.0          │','info');
+  pr('└──────────────────────────────┘','info');
+  blank();
+  pr('Welcome back, '+currentProfile+'! '+rank.icon+' '+rank.title,'ok');
+  pr('XP: '+S.xp+' | Best streak: '+S.bestStreak+' | Sessions: '+P.totalSessions,'sys');
+  blank();
+  pr('📖 learn    → guided lessons','out');
+  pr('🎮 game     → 50 real scenarios (Easy→Expert)','out');
+  pr('📖 Reference tab → cheatsheets & incident guide','sys');
+  pr('👤 Tap your name (top right) → profile & session history','sys');
+  blank();
+  if(S.mode==='learn'&&S.level<LEARN.length){pr('↩  Resuming lesson '+(S.level+1)+'...','sys');startLearn();}
+  else if(S.mode==='game'&&S.level<getFiltered().length){pr('↩  Resuming scenario '+(S.level+1)+'...','sys');startGame();}
+  ci.focus();
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+renderProfileList();
+</script>
+</body>
+</html>
