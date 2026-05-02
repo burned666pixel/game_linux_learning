@@ -11,9 +11,6 @@ As a Technical Support Engineer, I wanted hands-on learning instead of theory.
 - Command-based learning
 - Explanation mode
 
-## Demo
-(link your GitHub Pages)
-
 ## Tech Used
 - HTML, CSS, JS
 
